@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Financial Alert Simulator — Continuous Monitoring Demo</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface-2: #273449;
+      --border: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-2: #6366f1;
+      --ok: #22c55e;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+      background: linear-gradient(160deg, #0b1120 0%, #0f172a 60%, #172554 100%);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 28px 16px 48px;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1040px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.14);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(24px, 3.2vw, 34px);
+      font-weight: 750;
+      letter-spacing: -0.02em;
+    }
+
+    header p {
+      margin: 0 auto;
+      max-width: 680px;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 22px;
+    }
+
+    .preset-btn {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .preset-btn:hover {
+      border-color: var(--accent);
+      background: var(--surface-2);
+    }
+
+    .preset-btn.active {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(99, 102, 241, 0.22));
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1.15fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    @media (max-width: 840px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: rgba(30, 41, 59, 0.92);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+    }
+
+    .card h2 {
+      margin: 0 0 16px;
+      font-size: 16px;
+      font-weight: 700;
+      color: #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .field {
+      margin-bottom: 15px;
+    }
+
+    .field label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 6px;
+    }
+
+    .field label span.val {
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+    }
+
+    input[type="number"], select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #0f172a;
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+    }
+
+    input[type="number"]:focus, select:focus {
+      border-color: var(--accent);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .signals {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    @media (max-width: 480px) {
+      .signals { grid-template-columns: 1fr; }
+    }
+
+    .signal-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      font-size: 12.5px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .signal-chip input {
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    @media (max-width: 520px) {
+      .kpis { grid-template-columns: 1fr; }
+    }
+
+    .kpi {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    .kpi .k-label {
+      font-size: 11.5px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .kpi .k-val {
+      font-size: 20px;
+      font-weight: 750;
+      margin-top: 4px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .kpi .k-sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .alert-box {
+      border-radius: 12px;
+      padding: 18px;
+      border: 1px solid var(--border);
+      background: #0f172a;
+    }
+
+    .alert-box.ok { border-color: rgba(34, 197, 94, 0.5); background: rgba(34, 197, 94, 0.08); }
+    .alert-box.warn { border-color: rgba(245, 158, 11, 0.55); background: rgba(245, 158, 11, 0.09); }
+    .alert-box.danger { border-color: rgba(239, 68, 68, 0.6); background: rgba(239, 68, 68, 0.1); }
+
+    .alert-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .pill {
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .pill.ok { background: rgba(34, 197, 94, 0.2); color: #86efac; }
+    .pill.warn { background: rgba(245, 158, 11, 0.22); color: #fde68a; }
+    .pill.danger { background: rgba(239, 68, 68, 0.22); color: #fca5a5; }
+
+    .alert-title {
+      font-weight: 700;
+      font-size: 15px;
+    }
+
+    .alert-summary {
+      font-size: 14px;
+      color: #e2e8f0;
+      margin: 0 0 12px;
+    }
+
+    .actions-title {
+      font-size: 12.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    ul.actions {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 13.5px;
+      color: #cbd5e1;
+    }
+
+    ul.actions li { margin-bottom: 4px; }
+
+    .bar-wrap {
+      margin-top: 16px;
+    }
+
+    .bar-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+
+    .bar-track {
+      height: 10px;
+      border-radius: 999px;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.25s ease, background 0.25s ease;
+    }
+
+    .footer-note {
+      margin-top: 16px;
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge">Interactive Companion Demo</div>
+      <h1>AI Financial Alert Simulator</h1>
+      <p>
+        See how continuous financial monitoring detects mid-month variances before the month-end close.
+        Pick a scenario from the article or enter your own numbers.
+      </p>
+    </header>
+
+    <div class="presets">
+      <button class="preset-btn active" data-preset="revenue">1. Revenue Shortfall ($1M Budget)</button>
+      <button class="preset-btn" data-preset="consulting">2. Consulting Overrun ($30k Budget)</button>
+      <button class="preset-btn" data-preset="payroll">3. Payroll &amp; Overtime ($380k Budget)</button>
+      <button class="preset-btn" data-preset="on-track">4. Healthy Mid-Month Pace</button>
+    </div>
+
+    <div class="grid">
+      <section class="card">
+        <h2>Mid-Month Financial &amp; Operational Inputs</h2>
+
+        <div class="field">
+          <label for="metricType">Monitoring Category</label>
+          <select id="metricType">
+            <option value="revenue">Revenue (Higher is better)</option>
+            <option value="expense">Operating / Consulting Expense (Lower is better)</option>
+            <option value="payroll">Payroll &amp; Labor Cost (Lower is better)</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="budget">Monthly Budget ($)</label>
+          <input type="number" id="budget" min="1000" step="1000" value="1000000" />
+        </div>
+
+        <div class="field">
+          <label for="day">
+            <span>Current Business Day (of 22)</span>
+            <span class="val" id="dayVal">Day 10</span>
+          </label>
+          <input type="range" id="day" min="1" max="22" value="10" />
+        </div>
+
+        <div class="field">
+          <label for="actual">Month-to-Date Recorded Actuals ($)</label>
+          <input type="number" id="actual" min="0" step="1000" value="405000" />
+        </div>
+
+        <div class="field">
+          <label for="commitments">Unposted Commitments / Pending Impact ($)</label>
+          <input type="number" id="commitments" min="0" step="500" value="10000" />
+        </div>
+
+        <div class="field">
+          <label>Connected Operational Signals</label>
+          <div class="signals">
+            <label class="signal-chip"><input type="checkbox" class="sig" value="cancellations" checked /> Rising cancellations</label>
+            <label class="signal-chip"><input type="checkbox" class="sig" value="overtime" /> Overtime spike</label>
+            <label class="signal-chip"><input type="checkbox" class="sig" value="unposted" /> Unposted invoices</label>
+            <label class="signal-chip"><input type="checkbox" class="sig" value="collections" /> Slower collections</label>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>
+          <span>Continuous Monitoring Output</span>
+          <span id="daysLeftLabel" style="font-size:12px;color:var(--muted);font-weight:500;">12 business days left</span>
+        </h2>
+
+        <div class="kpis">
+          <div class="kpi">
+            <div class="k-label">Expected Pace (Today)</div>
+            <div class="k-val" id="kpiExpected">$454,545</div>
+            <div class="k-sub" id="kpiExpectedPct">45.5% of month</div>
+          </div>
+          <div class="kpi">
+            <div class="k-label">Projected Month-End</div>
+            <div class="k-val" id="kpiProjected">$910,000</div>
+            <div class="k-sub" id="kpiPaceNote">Based on current run rate</div>
+          </div>
+          <div class="kpi">
+            <div class="k-label">Projected Variance</div>
+            <div class="k-val" id="kpiVariance">-$90,000</div>
+            <div class="k-sub" id="kpiVarPct">-9.0% vs budget</div>
+          </div>
+        </div>
+
+        <div class="alert-box danger" id="alertBox">
+          <div class="alert-header">
+            <div class="alert-title" id="alertTitle">Priority: Potential Revenue Shortfall</div>
+            <span class="pill danger" id="alertPill">Critical Alert</span>
+          </div>
+          <p class="alert-summary" id="alertSummary"></p>
+          <div class="actions-title">Recommended Management Actions</div>
+          <ul class="actions" id="alertActions"></ul>
+        </div>
+
+        <div class="bar-wrap">
+          <div class="bar-labels">
+            <span>Budget Utilization / Pace</span>
+            <span id="barPctLabel">91% projected</span>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill" id="barFill" style="width:91%;background:var(--danger);"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <p class="footer-note">
+      Illustrative simulation for educational purposes. Forecasts are estimates based on linear run-rate + pending commitments; human review is required before taking financial action.
+    </p>
+  </div>
+
+  <script>
+    const TOTAL_DAYS = 22;
+
+    const presets = {
+      revenue: {
+        metricType: "revenue",
+        budget: 1000000,
+        day: 10,
+        actual: 405000,
+        commitments: 9000,
+        signals: ["cancellations"]
+      },
+      consulting: {
+        metricType: "expense",
+        budget: 30000,
+        day: 10,
+        actual: 25000,
+        commitments: 17000,
+        signals: ["unposted"]
+      },
+      payroll: {
+        metricType: "payroll",
+        budget: 380000,
+        day: 12,
+        actual: 215000,
+        commitments: 26000,
+        signals: ["overtime"]
+      },
+      "on-track": {
+        metricType: "revenue",
+        budget: 1000000,
+        day: 11,
+        actual: 505000,
+        commitments: 15000,
+        signals: []
+      }
+    };
+
+    const els = {
+      metricType: document.getElementById("metricType"),
+      budget: document.getElementById("budget"),
+      day: document.getElementById("day"),
+      dayVal: document.getElementById("dayVal"),
+      actual: document.getElementById("actual"),
+      commitments: document.getElementById("commitments"),
+      sigs: Array.from(document.querySelectorAll(".sig")),
+      daysLeftLabel: document.getElementById("daysLeftLabel"),
+      kpiExpected: document.getElementById("kpiExpected"),
+      kpiExpectedPct: document.getElementById("kpiExpectedPct"),
+      kpiProjected: document.getElementById("kpiProjected"),
+      kpiVariance: document.getElementById("kpiVariance"),
+      kpiVarPct: document.getElementById("kpiVarPct"),
+      alertBox: document.getElementById("alertBox"),
+      alertTitle: document.getElementById("alertTitle"),
+      alertPill: document.getElementById("alertPill"),
+      alertSummary: document.getElementById("alertSummary"),
+      alertActions: document.getElementById("alertActions"),
+      barFill: document.getElementById("barFill"),
+      barPctLabel: document.getElementById("barPctLabel")
+    };
+
+    const fmt = (n) => {
+      const sign = n < 0 ? "-" : "";
+      return sign + "$" + Math.round(Math.abs(n)).toLocaleString("en-US");
+    };
+
+    function update() {
+      const type = els.metricType.value;
+      const budget = Math.max(1, Number(els.budget.value) || 0);
+      const day = Math.min(TOTAL_DAYS, Math.max(1, Number(els.day.value) || 1));
+      const actual = Math.max(0, Number(els.actual.value) || 0);
+      const commitments = Math.max(0, Number(els.commitments.value) || 0);
+      const activeSignals = els.sigs.filter((s) => s.checked).map((s) => s.value);
+
+      els.dayVal.textContent = `Day ${day}`;
+      els.daysLeftLabel.textContent = `${TOTAL_DAYS - day} business days left`;
+
+      const expectedToDate = (budget / TOTAL_DAYS) * day;
+      const runRateProjected = (actual / day) * TOTAL_DAYS;
+
+      // For revenue, pending commitments/pipeline are treated as risk-adjusted or partial offset if negative;
+      // for expenses/payroll, unposted commitments add directly to projected spend.
+      const projected =
+        type === "revenue"
+          ? runRateProjected + commitments
+          : actual + commitments + ((actual / day) * (TOTAL_DAYS - day) * 0.45);
+
+      const variance = projected - budget;
+      const varPct = (variance / budget) * 100;
+
+      // Determine unfavorable variance
+      const unfavorable = type === "revenue" ? variance < 0 : variance > 0;
+      const unfavorablePct = unfavorable ? Math.abs(varPct) : 0;
+
+      let level = "ok";
+      if (unfavorablePct >= 8) level = "danger";
+      else if (unfavorablePct >= 3 || (unfavorable && activeSignals.length > 0)) level = "warn";
+
+      els.kpiExpected.textContent = fmt(expectedToDate);
+      els.kpiExpectedPct.textContent = `${((day / TOTAL_DAYS) * 100).toFixed(1)}% of month`;
+      els.kpiProjected.textContent = fmt(projected);
+      els.kpiVariance.textContent = (variance >= 0 ? "+" : "") + fmt(variance);
+      els.kpiVarPct.textContent = `${variance >= 0 ? "+" : ""}${varPct.toFixed(1)}% vs budget`;
+
+      els.alertBox.className = `alert-box ${level}`;
+      els.alertPill.className = `pill ${level}`;
+
+      const signalNotes = [];
+      if (activeSignals.includes("cancellations")) signalNotes.push("increased customer cancellations");
+      if (activeSignals.includes("overtime")) signalNotes.push("elevated overtime hours");
+      if (activeSignals.includes("unposted")) signalNotes.push("unposted vendor commitments");
+      if (activeSignals.includes("collections")) signalNotes.push("slower customer collections");
+
+      const signalText = signalNotes.length
+        ? ` Connected operational signals also flag ${signalNotes.join(", ")}.`
+        : "";
+
+      const actions = [];
+      if (level === "ok") {
+        els.alertTitle.textContent = "Status: Tracking Within Expected Threshold";
+        els.alertPill.textContent = "On Track";
+        els.alertSummary.textContent = `Current ${type} performance is pacing favorably against the ${fmt(budget)} monthly budget with ${TOTAL_DAYS - day} business days remaining.${signalText}`;
+        actions.push("Continue standard automated monitoring.");
+        actions.push("No immediate management escalation required.");
+      } else if (type === "revenue") {
+        els.alertTitle.textContent = level === "danger" ? "Priority: Potential Revenue Shortfall" : "Watch: Revenue Pacing Below Plan";
+        els.alertPill.textContent = level === "danger" ? "Critical Alert" : "Early Warning";
+        els.alertSummary.textContent = `Revenue is trending below the monthly budget. At the current pace, projected month-end revenue is ${fmt(projected)}—an estimated ${fmt(Math.abs(variance))} (${Math.abs(varPct).toFixed(1)}%) shortfall.${signalText}`;
+        actions.push("Review sales pipeline activity and pending renewals.");
+        actions.push("Contact customers with stalled or pending orders.");
+        if (activeSignals.includes("cancellations")) actions.push("Investigate root causes behind recent customer cancellations.");
+        actions.push("Evaluate targeted promotional or pricing adjustments before month-end.");
+      } else if (type === "expense") {
+        els.alertTitle.textContent = level === "danger" ? "Priority: Projected Expense Overrun" : "Watch: Elevated Spending Pace";
+        els.alertPill.textContent = level === "danger" ? "Critical Alert" : "Early Warning";
+        els.alertSummary.textContent = `Recorded spending (${fmt(actual)}) plus ${fmt(commitments)} in identified commitments puts projected month-end expenses at ${fmt(projected)}—approximately ${fmt(variance)} (${varPct.toFixed(1)}%) above budget.${signalText}`;
+        actions.push("Review outstanding purchase orders and consulting commitments.");
+        actions.push("Confirm whether remaining discretionary services are necessary this month.");
+        actions.push("Verify departmental spending approvals and reallocate budget if needed.");
+      } else {
+        els.alertTitle.textContent = level === "danger" ? "Priority: Projected Payroll Cost Overrun" : "Watch: Labor Cost Trending High";
+        els.alertPill.textContent = level === "danger" ? "Critical Alert" : "Early Warning";
+        els.alertSummary.textContent = `Projected monthly payroll is ${fmt(projected)}, approximately ${fmt(variance)} (${varPct.toFixed(1)}%) above the ${fmt(budget)} staffing budget.${signalText}`;
+        actions.push("Review employee schedules and overtime authorization.");
+        actions.push("Check temporary staffing usage and program labor allocations.");
+        actions.push("Compare actual headcount hours against the approved staffing plan.");
+      }
+
+      els.alertActions.innerHTML = actions.map((a) => `<li>${a}</li>`).join("");
+
+      const pctOfBudget = Math.min(140, Math.max(5, (projected / budget) * 100));
+      els.barFill.style.width = `${Math.min(100, pctOfBudget)}%`;
+      els.barFill.style.background =
+        level === "danger" ? "var(--danger)" : level === "warn" ? "var(--warn)" : "var(--ok)";
+      els.barPctLabel.textContent = `${pctOfBudget.toFixed(0)}% of budget projected`;
+    }
+
+    document.querySelectorAll(".preset-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".preset-btn").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        const p = presets[btn.dataset.preset];
+        els.metricType.value = p.metricType;
+        els.budget.value = p.budget;
+        els.day.value = p.day;
+        els.actual.value = p.actual;
+        els.commitments.value = p.commitments;
+        els.sigs.forEach((s) => { s.checked = p.signals.includes(s.value); });
+        update();
+      });
+    });
+
+    [els.metricType, els.budget, els.day, els.actual, els.commitments, ...els.sigs].forEach((el) => {
+      el.addEventListener("input", update);
+      el.addEventListener("change", update);
+    });
+
+    update();
+  </script>
+</body>
+</html>
